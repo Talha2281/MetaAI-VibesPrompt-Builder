@@ -1,6 +1,5 @@
 import streamlit as st
 import google.generativeai as genai
-from google.api_core.exceptions import NotFound
 
 # Configure page
 st.set_page_config(page_title="MetaAI Video Prompt Builder", layout="centered")
@@ -33,34 +32,16 @@ user_idea = st.text_area(
 api_key = st.secrets["GIMNI_API_KEY"]
 genai.configure(api_key=api_key)
 
-def get_model():
-    """
-    Try models depending on SDK version.
-    New SDKs support gemini-1.5 models, older SDKs only gemini-pro.
-    """
-    model_names = [
-        "gemini-1.5-flash-latest",  # fastest
-        "gemini-1.5-pro-latest",   # more detailed
-        "gemini-2.5-flash"               # fallback for old SDKs
-    ]
-
-    for name in model_names:
-        try:
-            st.sidebar.write(f"✅ Using model: {name}")
-            return genai.GenerativeModel(name)
-        except NotFound:
-            continue
-        except Exception as e:
-            st.sidebar.write(f"⚠️ {name} not available: {e}")
-            continue
-
-    raise RuntimeError("❌ No supported Gemini model found for this SDK/API key.")
+# Fixed model
+MODEL_NAME = "gemini-2.5-flash"
 
 # Generate structured prompt
 if st.button("✨ Generate Professional Prompt"):
     if user_idea.strip():
         try:
-            model = get_model()
+            st.sidebar.write(f"✅ Using model: {MODEL_NAME}")
+            model = genai.GenerativeModel(MODEL_NAME)
+
             system_instruction = (
                 "You are an expert video prompt engineer for MetaAI. "
                 "Take the user’s raw idea and rewrite it into a highly detailed, professional MetaAI video prompt. "
