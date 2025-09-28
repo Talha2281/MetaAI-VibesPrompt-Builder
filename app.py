@@ -22,28 +22,42 @@ with st.expander("📌 Prompt Structure Guide (Click to View)"):
     """)
 
 # User Input
-user_idea = st.text_area("📝 Describe your video idea in your own words:", height=150, placeholder="Example: A knight riding a horse across a battlefield at sunrise, epic cinematic style...")
+user_idea = st.text_area(
+    "📝 Describe your video idea in your own words:",
+    height=150,
+    placeholder="Example: A knight riding a horse across a battlefield at sunrise, epic cinematic style..."
+)
 
 # Load API key from Streamlit secrets
 api_key = st.secrets["GIMNI_API_KEY"]
 genai.configure(api_key=api_key)
 
+def get_model():
+    """Try flash-latest first, then fallback to pro-latest."""
+    try:
+        return genai.GenerativeModel("gemini-1.5-flash-latest")
+    except Exception:
+        return genai.GenerativeModel("gemini-1.5-pro-latest")
+
 # Generate structured prompt
 if st.button("✨ Generate Professional Prompt"):
     if user_idea.strip():
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        system_instruction = (
-            "You are an expert video prompt engineer for MetaAI. "
-            "Take the user’s raw idea and rewrite it into a highly detailed, professional MetaAI video prompt. "
-            "Follow this structure: Subject, Action, Environment, Camera, Style, Mood, Duration/Resolution, Constraints. "
-            "Ensure clarity, cinematic quality, and remove vagueness."
-        )
-        response = model.generate_content([system_instruction, user_idea])
-        final_prompt = response.text.strip()
+        try:
+            model = get_model()
+            system_instruction = (
+                "You are an expert video prompt engineer for MetaAI. "
+                "Take the user’s raw idea and rewrite it into a highly detailed, professional MetaAI video prompt. "
+                "Follow this structure: Subject, Action, Environment, Camera, Style, Mood, Duration/Resolution, Constraints. "
+                "Ensure clarity, cinematic quality, and remove vagueness."
+            )
+            response = model.generate_content([system_instruction, user_idea])
+            final_prompt = response.text.strip()
 
-        st.subheader("✅ Your Generated Prompt:")
-        st.write(final_prompt)
+            st.subheader("✅ Your Generated Prompt:")
+            st.write(final_prompt)
 
-        st.download_button("📥 Download Prompt", final_prompt, file_name="metaai_video_prompt.txt")
+            st.download_button("📥 Download Prompt", final_prompt, file_name="metaai_video_prompt.txt")
+        except Exception as e:
+            st.error(f"⚠️ Failed to generate prompt. Error: {e}")
     else:
         st.warning("⚠️ Please enter your video idea first.")
