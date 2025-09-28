@@ -1,5 +1,5 @@
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 # ✅ Load Gemini API key from Streamlit Secrets safely
 if "GEMINI_API_KEY" not in st.secrets:
