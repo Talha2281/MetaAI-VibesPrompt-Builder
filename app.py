@@ -1,61 +1,54 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
-# Configure page
-st.set_page_config(page_title="Meta AI Vibe Prompt Builder", layout="centered")
+# Load API key from Streamlit Secrets
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
-st.title("🎬 Meta AI Vibe Prompt Builder")
-st.write("Write your idea below and let Gimni structure it into a professional Meta AI vibe prompt.")
+# Initialize Gemini client
+client = genai.Client(api_key=GEMINI_API_KEY)
 
-# Prompt Structure Guide
-with st.expander("📌 Prompt Structure Guide (Click to View)"):
+st.set_page_config(page_title="MetaAI Video Prompt Generator", page_icon="🎬", layout="wide")
+
+st.title("🎬 MetaAI Video Prompt Generator")
+st.write("Create **powerful prompts** for video generation with MetaAI. ✨")
+
+# Show structure as guidance only (not for output)
+with st.expander("📖 Prompt Structure Guide"):
     st.markdown("""
-    **Best Practice Structure for MetaAI Video Prompts**  
-    1. **Subject** → Who/What is the video about (e.g., "a young woman in a red dress")  
-    2. **Action** → What are they doing (e.g., "walking through the city")  
-    3. **Environment** → Where it happens (e.g., "a neon-lit futuristic street at night")  
-    4. **Camera** → Angle & movement (e.g., "cinematic tracking shot, then close-up")  
-    5. **Style** → Cinematic, Anime, Fantasy, Realistic, etc.  
-    6. **Mood/Atmosphere** → Emotional tone (e.g., "mysterious and dramatic")  
-    7. **Resolution** → Example:  "4K"  
-    8. **Constraints** → What to avoid (e.g., "no blurry visuals, no distortions")  
+    **A good video prompt usually includes:**
+    - **Subject** → Who/what is in the video (e.g., astronaut, cat, car, dancer).  
+    - **Action / Scene** → What is happening (e.g., walking on Mars, jumping in slow motion).  
+    - **Environment / Background** → Where it takes place (e.g., futuristic city, beach at sunset).  
+    - **Style / Mood** → Realistic, cinematic, anime, cartoon, documentary.  
+    - **Camera / Quality** → 4K, cinematic lighting, wide-angle, close-up, drone shot.  
+    - **Extra details** → Colors, atmosphere, time of day, weather, etc.  
     """)
 
-# User Input
-user_idea = st.text_area(
-    "📝 Describe your video idea in your own words:",
-    height=50,
-    placeholder="Example: A knight riding a horse across a battlefield at sunrise, epic cinematic style..."
-)
+# User free text
+user_input = st.text_area("📝 Describe your idea for the video:", placeholder="Example: A futuristic city at night with flying cars...")
 
-# Load API key from Streamlit secrets
-api_key = st.secrets["GIMNI_API_KEY"]
-genai.configure(api_key=api_key)
-
-# Fixed model
-MODEL_NAME = "gemini-2.5-flash"
-
-# Generate structured prompt
-if st.button("✨ Generate Professional Prompt"):
-    if user_idea.strip():
-        try:
-            st.sidebar.write(f"✅ Using model: {MODEL_NAME}")
-            model = genai.GenerativeModel(MODEL_NAME)
-
-            system_instruction = (
-                "You are an expert video prompt engineer for MetaAI Vibes. "
-                "Take the user’s raw idea and rewrite it into a highly detailed, professional MetaAI video prompt. "
-                "Follow this structure: Subject, Action, Environment, Camera, Style, Mood,Resolution, Constraints. "
-                "Ensure clarity, cinematic quality, and remove vagueness."
-            )
-            response = model.generate_content([system_instruction, user_idea])
-            final_prompt = response.text.strip()
-
-            st.subheader("✅ Your Generated Prompt:")
-            st.write(final_prompt)
-
-            st.download_button("📥 Download Prompt", final_prompt, file_name="Meta Ai_vibe_prompt.txt")
-        except Exception as e:
-            st.error(f"⚠️ Failed to generate prompt. Error: {e}")
+if st.button("✨ Generate Prompt"):
+    if not user_input.strip():
+        st.warning("Please enter your idea first!")
     else:
-        st.warning("⚠️ Please enter your video idea first.")
+        with st.spinner("Generating best prompt..."):
+            try:
+                # Ask Gemini to generate a short natural prompt
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=f"""
+                    You are an expert prompt engineer for video generation.
+                    The user gave this idea: {user_input}
+
+                    Use the best structure (subject, action, environment, style, camera, details) as a **hidden guide**.
+                    But return only a **single final clean prompt** without headings, labels, or bullet points.
+                    Keep it natural, creative, and under 2–3 sentences.
+                    """
+                )
+
+                final_prompt = response.output_text.strip()
+                st.success("✅ Best Prompt Generated!")
+                st.text_area("🎬 Final Prompt:", value=final_prompt, height=150)
+
+            except Exception as e:
+                st.error(f"⚠️ Failed to generate prompt. Error: {str(e)}")
