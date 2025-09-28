@@ -41,7 +41,7 @@ def get_model():
     model_names = [
         "gemini-1.5-flash-latest",  # fastest
         "gemini-1.5-pro-latest",   # more detailed
-        "gemini-pro"               # fallback for old SDKs
+        "gemini-2.5-flash"               # fallback for old SDKs
     ]
 
     for name in model_names:
